@@ -173,6 +173,54 @@ footer {
     Video clipping and automatic captions are coming in future updates.
   </div>
 
+<section class="container" style="margin-top:20px">
+
+  <h2>Video Processing</h2>
+
+  <p>Upload your own video or an authorized creator's video.</p>
+
+  <input
+    type="file"
+    id="localVideo"
+    accept="video/*"
+  >
+
+  <video
+    id="localPlayer"
+    controls
+    playsinline
+    style="display:none;width:100%;border-radius:12px">
+  </video>
+
+  <h3>Video Transcript</h3>
+
+  <p>Paste timestamped Hindi or English transcript.</p>
+
+  <textarea
+    id="transcript"
+    placeholder="00:00:10 Hello everyone!
+00:00:30 Today we are playing...
+00:01:05 This is amazing!"
+    style="width:100%;min-height:160px;padding:14px;border-radius:9px;background:#202b40;color:white;border:1px solid #34415b">
+  </textarea>
+
+  <button onclick="findHighlights()">
+    Find Highlight Moments
+  </button>
+
+  <div id="highlightResults"></div>
+
+  <p class="note">
+    This first version uses timestamped transcript
+    and keyword scoring. It does not yet perform
+    AI speech recognition or render video clips.
+  </p>
+
+</section>
+</main>
+</body>
+</html>
+
 </main>
 
 <footer>
