@@ -1,1 +1,116 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLIPNOVA AI</title>
+<style>
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #080b14;
+  color: white;
+  padding: 20px;
+}
+header {
+  text-align: center;
+  padding: 25px 0;
+}
+h1 {
+  font-size: 32px;
+  margin-bottom: 5px;
+  color: #72a5ff;
+}
+p {
+  color: #aab3c5;
+}
+.container {
+  max-width: 500px;
+  margin: auto;
+  background: #121827;
+  padding: 20px;
+  border-radius: 16px;
+}
+input, button {
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border-radius: 9px;
+  border: 1px solid #34415b;
+  background: #202b40;
+  color: white;
+}
+button {
+  background: #326cf5;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+video {
+  width: 100%;
+  max-height: 350px;
+  margin-top: 15px;
+  border-radius: 12px;
+  background: black;
+}
+.preview {
+  margin-top: 20px;
+  text-align: center;
+}
+footer {
+  text-align: center;
+  color: #78849a;
+  margin-top: 25px;
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>CLIPNOVA AI</h1>
+<p>YOUR AI GAMING CLIPPER</p>
+</header>
+
+<div class="container">
+<h2>Create Gaming Shorts</h2>
+
+<label>YouTube Video Link</label>
+<input type="url" placeholder="Paste YouTube video link">
+
+<p>OR upload your video</p>
+<input type="file" id="videoFile" accept="video/*">
+
+<button onclick="previewVideo()">Preview Video</button>
+
+<div class="preview">
+<h3>Video Preview</h3>
+<video id="player" controls playsinline></video>
+</div>
+</div>
+
+<footer>
+CLIPNOVA AI © 2026
+</footer>
+
+<script>
+function previewVideo() {
+  const file = document.getElementById("videoFile").files[0];
+  const player = document.getElementById("player");
+
+  if (!file) {
+    alert("Please select a video first!");
+    return;
+  }
+
+  player.src = URL.createObjectURL(file);
+  player.load();
+}
+</script>
+
+</body>
+</html>
+
