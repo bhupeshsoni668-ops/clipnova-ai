@@ -14,62 +14,80 @@
 body {
   margin: 0;
   padding: 20px;
-  background: #080b14;
+  background: #0b1020;
   color: white;
   font-family: Arial, sans-serif;
 }
 
 header {
   text-align: center;
-  padding: 25px 0;
+  padding: 25px 10px;
 }
 
 .logo {
-  font-size: 32px;
-  font-weight: 800;
+  font-size: 30px;
+  font-weight: bold;
   color: #79a8ff;
-  letter-spacing: 1px;
-}
-
-.tagline {
-  color: #aab3c5;
-  font-size: 12px;
   letter-spacing: 2px;
 }
 
+.tagline {
+  color: #aab4c8;
+  font-size: 14px;
+}
+
 .container {
-  max-width: 520px;
-  margin: auto;
-  background: #121827;
-  padding: 22px;
-  border: 1px solid #28334a;
-  border-radius: 16px;
+  max-width: 650px;
+  margin: 20px auto;
+  background: #151e32;
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px solid #293650;
 }
 
 h2 {
+  font-size: 20px;
   margin-top: 0;
 }
 
-input {
+h3 {
+  font-size: 16px;
+  margin-top: 22px;
+}
+
+p {
+  color: #b9c4d8;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+input, textarea {
   width: 100%;
-  padding: 15px;
-  margin: 12px 0;
-  border-radius: 9px;
+  padding: 13px;
+  margin-top: 10px;
+  border-radius: 8px;
   border: 1px solid #34415b;
   background: #202b40;
   color: white;
   font-size: 14px;
 }
 
+textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
 button {
   width: 100%;
-  padding: 15px;
-  border: 0;
-  border-radius: 9px;
-  background: #326cf5;
+  padding: 14px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 8px;
+  background: #3978f6;
   color: white;
-  font-weight: bold;
   font-size: 15px;
+  font-weight: bold;
   cursor: pointer;
 }
 
@@ -77,52 +95,45 @@ button:active {
   opacity: 0.8;
 }
 
-.message {
-  margin-top: 15px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.error {
-  color: #ff7777;
-}
-
-.success {
-  color: #70e6a1;
-}
-
-.preview {
-  margin-top: 25px;
+#youtubePreview,
+#localPlayer {
   display: none;
-}
-
-.video-frame {
-  position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  background: black;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
+  margin-top: 15px;
+  border-radius: 10px;
 }
 
 .note {
-  color: #9ba8bd;
   font-size: 12px;
-  line-height: 1.6;
-  margin-top: 20px;
+  color: #8795ad;
+}
+
+#status {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.highlight-card {
+  background: #202b40;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+  border: 1px solid #34415b;
+}
+
+.highlight-card strong {
+  color: #79a8ff;
+}
+
+.highlight-card p {
+  font-size: 13px;
 }
 
 footer {
   text-align: center;
-  color: #68758b;
-  margin: 25px 0;
+  color: #77849b;
   font-size: 12px;
+  padding: 20px;
 }
 </style>
 </head>
@@ -131,53 +142,50 @@ footer {
 
 <header>
   <div class="logo">CLIPNOVA AI</div>
-  <div class="tagline">YOUR AI GAMING CLIPPER</div>
+  <p class="tagline">
+    Turn Long Videos Into Short Content
+  </p>
 </header>
 
-<main class="container">
+<main>
 
-  <h2>Generate Gaming Shorts</h2>
+<section class="container">
+  <h2>YouTube Video</h2>
 
-  <p>Paste your YouTube video link below.</p>
+  <p>Paste a YouTube video link below.</p>
 
   <input
     type="url"
-    id="youtubeLink"
-    placeholder="Paste YouTube video URL here"
+    id="youtubeURL"
+    placeholder="Paste YouTube URL here"
   >
 
-  <button onclick="loadVideo()">
-    Load YouTube Video
+  <button onclick="loadYouTube()">
+    Load YouTube Preview
   </button>
 
-  <div id="message" class="message"></div>
+  <p id="youtubeStatus"></p>
 
-  <section id="preview" class="preview">
-    <h3>YouTube Video Preview</h3>
+  <iframe
+    id="youtubePreview"
+    height="250"
+    allowfullscreen
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  ></iframe>
 
-    <div class="video-frame">
-      <iframe
-        id="youtubePlayer"
-        title="YouTube video preview"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-        referrerpolicy="strict-origin-when-cross-origin">
-      </iframe>
-    </div>
-  </section>
+  <p class="note">
+    YouTube preview only. Direct video downloading
+    and clipping are not available in this version.
+  </p>
+</section>
 
-  <div class="note">
-    Supported links: YouTube watch, youtu.be, Shorts and live links.
-    Only videos that allow embedding can play here.
-    <br><br>
-    Video clipping and automatic captions are coming in future updates.
-  </div>
+<section class="container">
+  <h2>Upload Video</h2>
 
-<section class="container" style="margin-top:20px">
-
-  <h2>Video Processing</h2>
-
-  <p>Upload your own video or an authorized creator's video.</p>
+  <p>
+    Upload your own video or a video you have
+    permission to edit.
+  </p>
 
   <input
     type="file"
@@ -189,20 +197,27 @@ footer {
     id="localPlayer"
     controls
     playsinline
-    style="display:none;width:100%;border-radius:12px">
-  </video>
+  ></video>
 
-  <h3>Video Transcript</h3>
+  <p class="note">
+    Video preview runs locally in your browser.
+  </p>
+</section>
 
-  <p>Paste timestamped Hindi or English transcript.</p>
+<section class="container">
+  <h2>Highlight Finder</h2>
+
+  <p>
+    Paste a timestamped Hindi or English transcript.
+  </p>
 
   <textarea
     id="transcript"
     placeholder="00:00:10 Hello everyone!
 00:00:30 Today we are playing...
-00:01:05 This is amazing!"
-    style="width:100%;min-height:160px;padding:14px;border-radius:9px;background:#202b40;color:white;border:1px solid #34415b">
-  </textarea>
+00:01:05 Wow that was amazing!
+00:02:00 This is unbelievable!"
+  ></textarea>
 
   <button onclick="findHighlights()">
     Find Highlight Moments
@@ -211,90 +226,206 @@ footer {
   <div id="highlightResults"></div>
 
   <p class="note">
-    This first version uses timestamped transcript
-    and keyword scoring. It does not yet perform
-    AI speech recognition or render video clips.
+    This version uses keyword matching.
+    It does not yet use AI speech recognition
+    or create downloadable video clips.
   </p>
-
 </section>
-</main>
-</body>
-</html>
 
 </main>
 
 <footer>
-  CLIPNOVA AI © 2026
+  CLIPNOVA AI • Prototype Version
 </footer>
 
 <script>
-function getYouTubeID(input) {
-  try {
-    const url = new URL(input.trim());
+let localVideoURL = null;
 
+function getYouTubeID(url) {
+  try {
+    const parsed = new URL(url);
     let id = "";
 
-    if (
-      url.hostname === "youtu.be" ||
-      url.hostname === "www.youtu.be"
+    if (parsed.hostname.includes("youtu.be")) {
+      id = parsed.pathname.substring(1);
+    } else if (
+      parsed.hostname.includes("youtube.com") ||
+      parsed.hostname.includes("youtube-nocookie.com")
     ) {
-      id = url.pathname.split("/")[1];
-    }
-
-    else if (
-      ["youtube.com", "www.youtube.com", "m.youtube.com"]
-      .includes(url.hostname)
-    ) {
-      if (url.pathname === "/watch") {
-        id = url.searchParams.get("v");
-      } else {
-        const parts = url.pathname.split("/");
-        if (
-          ["shorts", "embed", "live"]
-          .includes(parts[1])
-        ) {
-          id = parts[2];
-        }
+      if (parsed.pathname === "/watch") {
+        id = parsed.searchParams.get("v") || "";
+      } else if (
+        parsed.pathname.startsWith("/shorts/") ||
+        parsed.pathname.startsWith("/embed/") ||
+        parsed.pathname.startsWith("/live/")
+      ) {
+        id = parsed.pathname.split("/")[2] || "";
       }
     }
 
-    if (id && /^[a-zA-Z0-9_-]{11}$/.test(id)) {
-      return id;
-    }
+    return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
 
-    return null;
-
-  } catch {
+  } catch (error) {
     return null;
   }
 }
 
-function loadVideo() {
-  const input = document.getElementById("youtubeLink").value;
-  const message = document.getElementById("message");
-  const preview = document.getElementById("preview");
-  const player = document.getElementById("youtubePlayer");
+function loadYouTube() {
+  const url = document.getElementById("youtubeURL").value.trim();
+  const preview = document.getElementById("youtubePreview");
+  const status = document.getElementById("youtubeStatus");
 
-  const videoID = getYouTubeID(input);
+  const videoID = getYouTubeID(url);
 
   if (!videoID) {
-    message.className = "message error";
-    message.textContent =
-      "Invalid YouTube link. Please paste a valid video URL.";
-
     preview.style.display = "none";
-    player.src = "";
+    preview.src = "";
+    status.textContent = "Please enter a valid YouTube URL.";
     return;
   }
 
-  player.src =
+  preview.src =
     "https://www.youtube-nocookie.com/embed/" + videoID;
 
   preview.style.display = "block";
+  status.textContent = "YouTube video detected successfully.";
+}
 
-  message.className = "message success";
-  message.textContent =
-    "YouTube link detected successfully! Video preview is ready.";
+document.getElementById("localVideo")
+.addEventListener("change", function() {
+
+  const file = this.files[0];
+  const player = document.getElementById("localPlayer");
+
+  if (!file) return;
+
+  if (!file.type.startsWith("video/")) {
+    alert("Please select a valid video file.");
+    return;
+  }
+
+  if (localVideoURL) {
+    URL.revokeObjectURL(localVideoURL);
+  }
+
+  localVideoURL = URL.createObjectURL(file);
+
+  player.src = localVideoURL;
+  player.style.display = "block";
+  player.load();
+});
+
+function findHighlights() {
+  const transcript =
+    document.getElementById("transcript").value;
+
+  const results =
+    document.getElementById("highlightResults");
+
+  results.innerHTML = "";
+
+  const lines = transcript.split("\n");
+
+  const keywords = [
+    "wow", "amazing", "unbelievable",
+    "crazy", "insane", "wait",
+    "important", "secret", "surprising",
+    "finally", "victory", "clutch",
+    "headshot", "funny", "dekho",
+    "bhai", "kya", "zabardast",
+    "kamal", "jeet", "dosto",
+    "lekin", "kyunki", "सुनो",
+    "देखो", "कमाल", "शानदार"
+  ];
+
+  const moments = [];
+
+  for (const line of lines) {
+    const match = line.match(
+      /^\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s+(.+)$/
+    );
+
+    if (!match) continue;
+
+    const hours = Number(match[1] || 0);
+    const minutes = Number(match[2]);
+    const seconds = Number(match[3]);
+    const text = match[4];
+
+    const time =
+      hours * 3600 + minutes * 60 + seconds;
+
+    const lowerText = text.toLowerCase();
+
+    let score = 0;
+
+    for (const word of keywords) {
+      if (lowerText.includes(word)) {
+        score++;
+      }
+    }
+
+    if (score > 0) {
+      moments.push({
+        time: time,
+        score: score,
+        text: text
+      });
+    }
+  }
+
+  if (moments.length === 0) {
+    results.textContent =
+      "No keyword matches found. Check your transcript timestamps.";
+    return;
+  }
+
+  moments.sort((a, b) => b.score - a.score);
+
+  const selected = [];
+
+  for (const moment of moments) {
+    const tooClose = selected.some(item =>
+      Math.abs(item.time - moment.time) < 45
+    );
+
+    if (!tooClose) {
+      selected.push(moment);
+    }
+
+    if (selected.length === 5) break;
+  }
+
+  selected.sort((a, b) => a.time - b.time);
+
+  for (const item of selected) {
+    const card = document.createElement("div");
+    card.className = "highlight-card";
+
+    const title = document.createElement("strong");
+
+    title.textContent =
+      "Suggested Highlight: " +
+      formatTime(item.time) + " - " +
+      formatTime(item.time + 45);
+
+    const description = document.createElement("p");
+    description.textContent = item.text;
+
+    card.appendChild(title);
+    card.appendChild(description);
+
+    results.appendChild(card);
+  }
+}
+
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+
+  return String(minutes).padStart(2, "0") +
+    ":" +
+    String(remaining).padStart(2, "0");
 }
 </script>
 
