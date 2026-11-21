@@ -4,6 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>CLIPNOVA AI</title>
 
 <style>
@@ -61,7 +62,16 @@ p {
   font-size: 14px;
 }
 
-input, textarea {
+label {
+  display: block;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #dce5f5;
+}
+
+input,
+textarea,
+select {
   width: 100%;
   padding: 13px;
   margin-top: 10px;
@@ -101,6 +111,11 @@ button:active {
   width: 100%;
   margin-top: 15px;
   border-radius: 10px;
+  background: #000;
+}
+
+#localPlayer {
+  max-height: 450px;
 }
 
 .note {
@@ -108,7 +123,7 @@ button:active {
   color: #8795ad;
 }
 
-#status {
+#youtubeStatus {
   margin-top: 12px;
   font-size: 13px;
 }
@@ -129,11 +144,30 @@ button:active {
   font-size: 13px;
 }
 
+.play-clip {
+  background: #16a085;
+  margin-top: 10px;
+}
+
 footer {
   text-align: center;
   color: #77849b;
   font-size: 12px;
   padding: 20px;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 12px;
+  }
+
+  .container {
+    padding: 16px;
+  }
+
+  .logo {
+    font-size: 26px;
+  }
 }
 </style>
 </head>
@@ -142,6 +176,7 @@ footer {
 
 <header>
   <div class="logo">CLIPNOVA AI</div>
+
   <p class="tagline">
     Turn Long Videos Into Short Content
   </p>
@@ -149,7 +184,10 @@ footer {
 
 <main>
 
+<!-- YOUTUBE SECTION -->
+
 <section class="container">
+
   <h2>YouTube Video</h2>
 
   <p>Paste a YouTube video link below.</p>
@@ -175,11 +213,15 @@ footer {
 
   <p class="note">
     YouTube preview only. Direct video downloading
-    and clipping are not available in this version.
+    and clipping are not available.
   </p>
+
 </section>
 
+<!-- VIDEO UPLOAD SECTION -->
+
 <section class="container">
+
   <h2>Upload Video</h2>
 
   <p>
@@ -202,9 +244,13 @@ footer {
   <p class="note">
     Video preview runs locally in your browser.
   </p>
+
 </section>
 
+<!-- HIGHLIGHT FINDER -->
+
 <section class="container">
+
   <h2>Highlight Finder</h2>
 
   <p>
@@ -219,6 +265,17 @@ footer {
 00:02:00 This is unbelievable!"
   ></textarea>
 
+  <label for="clipDuration">
+    Select Clip Duration
+  </label>
+
+  <select id="clipDuration">
+    <option value="40">40 Seconds</option>
+    <option value="45" selected>45 Seconds</option>
+    <option value="50">50 Seconds</option>
+    <option value="60">60 Seconds</option>
+  </select>
+
   <button onclick="findHighlights()">
     Find Highlight Moments
   </button>
@@ -226,10 +283,11 @@ footer {
   <div id="highlightResults"></div>
 
   <p class="note">
-    This version uses keyword matching.
-    It does not yet use AI speech recognition
-    or create downloadable video clips.
+    This version uses timestamped transcript
+    and keyword matching. It does not yet use
+    AI speech recognition or export video clips.
   </p>
+
 </section>
 
 </main>
@@ -239,48 +297,81 @@ footer {
 </footer>
 
 <script>
+
+// VIDEO STORAGE
+
 let localVideoURL = null;
 
+
+// YOUTUBE VIDEO ID
+
 function getYouTubeID(url) {
+
   try {
+
     const parsed = new URL(url);
+
     let id = "";
 
     if (parsed.hostname.includes("youtu.be")) {
+
       id = parsed.pathname.substring(1);
+
     } else if (
       parsed.hostname.includes("youtube.com") ||
       parsed.hostname.includes("youtube-nocookie.com")
     ) {
+
       if (parsed.pathname === "/watch") {
+
         id = parsed.searchParams.get("v") || "";
+
       } else if (
         parsed.pathname.startsWith("/shorts/") ||
         parsed.pathname.startsWith("/embed/") ||
         parsed.pathname.startsWith("/live/")
       ) {
+
         id = parsed.pathname.split("/")[2] || "";
+
       }
     }
 
-    return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+    return /^[a-zA-Z0-9_-]{11}$/.test(id)
+      ? id
+      : null;
 
   } catch (error) {
+
     return null;
+
   }
 }
 
+
+// LOAD YOUTUBE PREVIEW
+
 function loadYouTube() {
-  const url = document.getElementById("youtubeURL").value.trim();
-  const preview = document.getElementById("youtubePreview");
-  const status = document.getElementById("youtubeStatus");
+
+  const url =
+    document.getElementById("youtubeURL").value.trim();
+
+  const preview =
+    document.getElementById("youtubePreview");
+
+  const status =
+    document.getElementById("youtubeStatus");
 
   const videoID = getYouTubeID(url);
 
   if (!videoID) {
+
     preview.style.display = "none";
     preview.src = "";
-    status.textContent = "Please enter a valid YouTube URL.";
+
+    status.textContent =
+      "Please enter a valid YouTube URL.";
+
     return;
   }
 
@@ -288,145 +379,364 @@ function loadYouTube() {
     "https://www.youtube-nocookie.com/embed/" + videoID;
 
   preview.style.display = "block";
-  status.textContent = "YouTube video detected successfully.";
+
+  status.textContent =
+    "YouTube video detected successfully.";
+
 }
+
+
+// LOCAL VIDEO UPLOAD
 
 document.getElementById("localVideo")
 .addEventListener("change", function() {
 
   const file = this.files[0];
-  const player = document.getElementById("localPlayer");
+
+  const player =
+    document.getElementById("localPlayer");
 
   if (!file) return;
 
   if (!file.type.startsWith("video/")) {
+
     alert("Please select a valid video file.");
+
     return;
   }
 
   if (localVideoURL) {
+
     URL.revokeObjectURL(localVideoURL);
+
   }
 
-  localVideoURL = URL.createObjectURL(file);
+  player.pause();
+
+  localVideoURL =
+    URL.createObjectURL(file);
 
   player.src = localVideoURL;
+
   player.style.display = "block";
+
   player.load();
+
 });
 
+
+// FIND HIGHLIGHTS
+
 function findHighlights() {
+
   const transcript =
     document.getElementById("transcript").value;
 
   const results =
     document.getElementById("highlightResults");
 
+  const duration = Number(
+    document.getElementById("clipDuration").value
+  );
+
   results.innerHTML = "";
 
   const lines = transcript.split("\n");
 
   const keywords = [
-    "wow", "amazing", "unbelievable",
-    "crazy", "insane", "wait",
-    "important", "secret", "surprising",
-    "finally", "victory", "clutch",
-    "headshot", "funny", "dekho",
-    "bhai", "kya", "zabardast",
-    "kamal", "jeet", "dosto",
-    "lekin", "kyunki", "सुनो",
-    "देखो", "कमाल", "शानदार"
+
+    "wow",
+    "amazing",
+    "unbelievable",
+    "crazy",
+    "insane",
+    "wait",
+    "important",
+    "secret",
+    "surprising",
+    "finally",
+    "victory",
+    "clutch",
+    "headshot",
+    "funny",
+    "dekho",
+    "bhai",
+    "kya",
+    "zabardast",
+    "kamal",
+    "jeet",
+    "dosto",
+    "lekin",
+    "kyunki",
+    "सुनो",
+    "देखो",
+    "कमाल",
+    "शानदार"
+
   ];
 
   const moments = [];
 
+
+  // READ TRANSCRIPT LINES
+
   for (const line of lines) {
+
     const match = line.match(
       /^\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s+(.+)$/
     );
 
     if (!match) continue;
 
-    const hours = Number(match[1] || 0);
-    const minutes = Number(match[2]);
-    const seconds = Number(match[3]);
-    const text = match[4];
+    const hours =
+      Number(match[1] || 0);
+
+    const minutes =
+      Number(match[2]);
+
+    const seconds =
+      Number(match[3]);
+
+    const text =
+      match[4];
+
+    if (minutes >= 60 || seconds >= 60) {
+      continue;
+    }
 
     const time =
-      hours * 3600 + minutes * 60 + seconds;
+      hours * 3600 +
+      minutes * 60 +
+      seconds;
 
-    const lowerText = text.toLowerCase();
+    const lowerText =
+      text.toLowerCase();
 
     let score = 0;
 
     for (const word of keywords) {
+
       if (lowerText.includes(word)) {
+
         score++;
+
       }
     }
 
     if (score > 0) {
+
       moments.push({
+
         time: time,
+
         score: score,
+
         text: text
+
       });
+
     }
+
   }
+
+
+  // NO RESULTS
 
   if (moments.length === 0) {
+
     results.textContent =
-      "No keyword matches found. Check your transcript timestamps.";
+      "No keyword matches found. Check transcript timestamps.";
+
     return;
+
   }
 
+
+  // SORT BY SCORE
+
   moments.sort((a, b) => b.score - a.score);
+
+
+  // SELECT TOP MOMENTS
 
   const selected = [];
 
   for (const moment of moments) {
+
     const tooClose = selected.some(item =>
-      Math.abs(item.time - moment.time) < 45
+
+      Math.abs(item.time - moment.time) < duration
+
     );
 
     if (!tooClose) {
+
       selected.push(moment);
+
     }
 
     if (selected.length === 5) break;
+
   }
+
+
+  // DISPLAY CHRONOLOGICALLY
 
   selected.sort((a, b) => a.time - b.time);
 
-  for (const item of selected) {
-    const card = document.createElement("div");
-    card.className = "highlight-card";
 
-    const title = document.createElement("strong");
+  // CREATE RESULT CARDS
+
+  for (const item of selected) {
+
+    const card =
+      document.createElement("div");
+
+    card.className =
+      "highlight-card";
+
+
+    const title =
+      document.createElement("strong");
 
     title.textContent =
       "Suggested Highlight: " +
-      formatTime(item.time) + " - " +
-      formatTime(item.time + 45);
+      formatTime(item.time) +
+      " - " +
+      formatTime(item.time + duration);
 
-    const description = document.createElement("p");
-    description.textContent = item.text;
+
+    const description =
+      document.createElement("p");
+
+    description.textContent =
+      item.text;
+
+
+    const playButton =
+      document.createElement("button");
+
+    playButton.className =
+      "play-clip";
+
+    playButton.textContent =
+      "▶ Play Clip";
+
+
+    // PLAY SELECTED CLIP
+
+    playButton.onclick = function() {
+
+      playSelectedClip(item.time, duration);
+
+    };
+
 
     card.appendChild(title);
+
     card.appendChild(description);
 
+    card.appendChild(playButton);
+
     results.appendChild(card);
+
   }
+
 }
 
+
+// PLAY SELECTED VIDEO SEGMENT
+
+function playSelectedClip(startTime, duration) {
+
+  const player =
+    document.getElementById("localPlayer");
+
+  if (!player.src) {
+
+    alert("Please upload a video first.");
+
+    return;
+
+  }
+
+  if (
+    player.readyState < 1 ||
+    !Number.isFinite(player.duration)
+  ) {
+
+    alert("Please wait until your video has loaded.");
+
+    return;
+
+  }
+
+  if (startTime >= player.duration) {
+
+    alert("This timestamp is beyond your video duration.");
+
+    return;
+
+  }
+
+  const clipEnd = Math.min(
+    startTime + duration,
+    player.duration
+  );
+
+  // CLEAR PREVIOUS CLIP STOP HANDLER
+
+  player.ontimeupdate = null;
+
+  // SET NEW CLIP END HANDLER
+
+  player.ontimeupdate = function() {
+
+    if (player.currentTime >= clipEnd) {
+
+      player.pause();
+
+      player.ontimeupdate = null;
+
+    }
+
+  };
+
+  // MOVE TO START TIME
+
+  player.currentTime = startTime;
+
+  // PLAY VIDEO
+
+  player.play().catch(function() {
+
+    player.ontimeupdate = null;
+
+    alert(
+      "Unable to play video. Please tap the video player."
+    );
+
+  });
+
+}
+
+
+// FORMAT TIME
+
 function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const remaining = seconds % 60;
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+  const remaining =
+    seconds % 60;
 
   return String(minutes).padStart(2, "0") +
     ":" +
     String(remaining).padStart(2, "0");
+
 }
+
 </script>
 
 </body>
