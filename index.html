@@ -1,40 +1,215 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CLIPNOVA AI Server</title>
-<style>:root{--bg:#070a1c;--card:#0f1430;--line:#232a5a;--m:#8b93c7}*{box-sizing:border-box}body{margin:0 auto;max-width:760px;padding:16px;background:radial-gradient(900px 500px at 50% -10%,#1a1450,var(--bg));color:#e8ecff;font:15px/1.45 system-ui,sans-serif}
-h1{margin:4px 0;letter-spacing:2px;background:linear-gradient(90deg,#b026ff,#3b82f6);-webkit-background-clip:text;color:transparent}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
-button,select,input[type=password],a.b{font:inherit;color:#fff;border:0;border-radius:12px;padding:11px 14px;background:linear-gradient(90deg,#b026ff,#3b82f6);text-decoration:none;display:inline-block}button:disabled{opacity:.4}select,input[type=password]{background:#151b44;border:1px solid var(--line);width:100%}
-progress{width:100%;accent-color:#b026ff}.note{color:var(--m);font-size:13px}.err{color:#ff6b8b}.hl{display:flex;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px;margin:8px 0}.hl img{width:112px;border-radius:8px}
-.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1 1 140px}.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}video{width:100%;border-radius:12px;background:#000}</style></head><body>
-<h1>CLIPNOVA AI</h1><p class="note">Server mode: big videos, FFmpeg + Whisper on the server.</p>
-<div class="card"><input id="tok" type="password" placeholder="Access token (only if the server needs one)"><p><input id="file" type="file" accept="video/*"></p>
-<button id="an" disabled>ANALYZE VIDEO</button><p><progress id="p1" value="0" max="100" hidden></progress></p><div id="t1" class="note"></div><div id="err" class="err"></div></div>
-<div class="card"><div id="hls" class="note">Highlights appear here.</div></div>
-<div class="card"><div class="row"><select id="dur"><option value="auto">Auto length</option><option>10</option><option>20</option><option>30</option><option>40</option></select>
-<select id="lang"><option value="hindi">Hindi → Roman</option><option value="english">English</option></select><select id="res"><option value="720">720×1280</option><option value="1080">1080×1920</option></select></div>
-<p><label><input type="checkbox" id="enh"> Denoise + light sharpen (ordinary filter, not AI super-resolution)</label></p><button id="gen" disabled>GENERATE CLIPS</button><p><progress id="p2" value="0" max="100" hidden></progress></p><div id="t2" class="note"></div></div>
-<div class="card"><div id="clips" class="clips"></div><p><button id="all" disabled>Download all</button></p></div>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CLIPNOVA AI</title>
+<style>
+:root{--bg:#070a1c;--card:#0f1430;--line:#232a5a;--p:#b026ff;--b:#3b82f6;--t:#e8ecff;--m:#8b93c7}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(900px 500px at 50% -10%,#1a1450,var(--bg));color:var(--t);font:15px/1.45 system-ui,sans-serif;padding:16px;max-width:760px;margin:auto}
+h1{margin:4px 0 2px;font-size:28px;letter-spacing:2px;background:linear-gradient(90deg,var(--p),var(--b));-webkit-background-clip:text;color:transparent}
+.sub{color:var(--m);margin:0 0 14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:0 0 24px #b026ff14}
+h2{font-size:15px;margin:0 0 10px;color:#cdb8ff}video{width:100%;border-radius:12px;background:#000;max-height:320px}
+button,select,.btn{font:inherit;color:#fff;border:0;border-radius:12px;padding:12px 16px;background:linear-gradient(90deg,var(--p),var(--b));cursor:pointer;box-shadow:0 0 14px #b026ff55}
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}select{background:#151b44;border:1px solid var(--line);box-shadow:none;width:100%}
+button.s{padding:8px 12px;font-size:13px}button.g{background:#151b44;box-shadow:none;border:1px solid var(--line)}
+progress{width:100%;height:10px;accent-color:var(--p)}.note{color:var(--m);font-size:13px}.err{color:#ff6b8b}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1 1 140px}label{display:block;color:var(--m);font-size:13px;margin-bottom:4px}
+.hl{display:flex;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px;margin:8px 0;align-items:flex-start}
+.hl img{width:112px;border-radius:8px;flex:none}.sc{color:#39ff14;font-weight:700}.cap{font-weight:900;letter-spacing:1px}
+.cap b:nth-child(1){color:#b026ff}.cap b:nth-child(2){color:#ffe600}.cap b:nth-child(3){color:#39ff14}.cap b:nth-child(4){color:#fff}
+.clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}.clips video{max-height:380px}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><filter id="sharp" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" kernelMatrix="0 -.4 0 -.4 2.6 -.4 0 -.4 0" preserveAlpha="true"/></filter></svg>
+<h1>CLIPNOVA AI</h1><p class="sub">Gameplay video → analysed highlights → captioned 9:16 Shorts. Runs fully in your browser.</p>
+
+<div class="card"><h2>1 · Upload gameplay</h2>
+<input id="file" type="file" accept="video/*"><p id="meta" class="note">MP4 / MOV / WebM your browser can play. 1–30 min, up to 200 MB.</p>
+<video id="v" controls playsinline preload="metadata" hidden></video>
+<p id="err" class="err"></p>
+<button id="an" disabled>ANALYZE VIDEO</button>
+<p><progress id="pa" value="0" max="100" hidden></progress></p><div id="ta" class="note"></div></div>
+
+<div class="card"><h2>2 · Highlights</h2><div id="hls" class="note">Run the analysis to see highlights.</div></div>
+
+<div class="card"><h2>3 · Style &amp; export</h2>
+<div class="row"><div><label>Clip length</label><select id="dur"><option value="auto">Auto (AI picks)</option><option>10</option><option>20</option><option>30</option><option>40</option></select></div>
+<div><label>Speech language</label><select id="lang"><option value="hindi">Hindi → Roman letters</option><option value="english">English</option></select></div>
+<div><label>Resolution</label><select id="res"><option value="720">720×1280 (safe)</option><option value="1080">1080×1920 (heavy)</option></select></div></div>
+<p><label><input type="checkbox" id="enh"> Light sharpen + clarity (ordinary filter, <b>not</b> AI super-resolution)</label></p>
+<p class="cap">Caption preview: <b>BHAI</b> <b>YE</b> <b>KYA</b> <b>HO GAYA!</b></p>
+<button id="gen" disabled>GENERATE CLIPS</button>
+<p><progress id="pg" value="0" max="100" hidden></progress></p><div id="tg" class="note"></div></div>
+
+<div class="card"><h2>4 · Your clips</h2><div id="clips" class="clips"></div><p><button id="all" class="g" disabled>Download all</button></p></div>
+
 <script>
-const $=s=>document.querySelector(s),sleep=ms=>new Promise(r=>setTimeout(r,ms));let id,hl=[],F=null,busy=false;
-const lock=b=>{busy=b;$('#an').disabled=b||!F;$('#gen').disabled=b||!hl.length;$('#file').disabled=b};
-async function api(p,o={}){const r=await fetch('/api'+p,{...o,headers:{'X-Token':$('#tok').value}});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.detail||('HTTP '+r.status));return j}
-const furl=n=>`/api/file/${id}/${n}?token=${encodeURIComponent($('#tok').value)}`;
-async function poll(j,k){for(;;){const s=await api('/job/'+j);$('#p'+k).hidden=false;$('#p'+k).value=s.progress;$('#t'+k).textContent=s.msg;if(s.status==='done')return s.result;if(s.status==='error')throw new Error(s.msg);await sleep(1500)}}
-$('#file').onchange=e=>{F=e.target.files[0]||null;hl=[];$('#an').disabled=!F;$('#err').textContent=''};
-$('#an').onclick=async()=>{lock(true);$('#err').textContent='';try{
-  const CH=8*2**20,n=Math.ceil(F.size/CH);id=(await api('/upload',{method:'POST'})).id;$('#p1').hidden=false;
-  for(let i=0;i<n;i++){for(let t=0;;t++){try{await api(`/upload/${id}/${i}`,{method:'PUT',body:F.slice(i*CH,(i+1)*CH)});break}catch(x){if(t>2)throw x;await sleep(1500)}}$('#p1').value=100*(i+1)/n;$('#t1').textContent=`Uploading ${i+1}/${n} chunks`}
-  await api(`/upload/${id}/finish?n=${n}`,{method:'POST'});
-  hl=await poll((await api('/analyze/'+id,{method:'POST'})).job,1);hl.forEach(h=>h.on=true);draw();
-}catch(x){$('#err').textContent=x.message}lock(false)};
-const rng=h=>{const s=$('#dur').value,d=s==='auto'?h.auto:+s;return{d,s:Math.min(Math.max(0,h.t-d*.4),Infinity)}};
-const fm=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
-function draw(){const b=$('#hls');b.innerHTML='';hl.forEach(h=>{const r=rng(h),e=document.createElement('div');e.className='hl';
-  e.innerHTML=`<img src="${furl(h.thumb)}"><div><label><input type="checkbox" ${h.on?'checked':''}> #${h.n} · score ${h.score}</label><div>${fm(r.s)} · ${r.d}s</div><div class="note">Why: ${h.why}</div></div>`;
-  e.querySelector('input').onchange=x=>h.on=x.target.checked;b.appendChild(e)})}
-$('#dur').onchange=()=>hl.length&&draw();
-$('#gen').onclick=async()=>{const sel=hl.filter(h=>h.on);if(!sel.length){$('#t2').textContent='Select a highlight.';return}lock(true);
-  try{const clips=sel.map(h=>({n:h.n,dur:rng(h).d,start:h.t-rng(h).d*.4}));
-   const res=await poll((await api('/render/'+id,{method:'POST',headers:{'Content-Type':'application/json','X-Token':$('#tok').value},body:JSON.stringify({clips,lang:$('#lang').value,res:+$('#res').value,enhance:$('#enh').checked})})).job,2);
-   $('#clips').innerHTML=res.map(c=>`<div><video src="${furl(c.file)}" controls playsinline></video><div class="note">#${c.n} · ${c.dur}s${c.words?'':' · no speech detected'}</div><a class="b" href="${furl(c.file)}" download>Download</a></div>`).join('');$('#all').disabled=false;
-  }catch(x){$('#t2').textContent='Failed: '+x.message}lock(false)};
-$('#all').onclick=async()=>{for(const a of document.querySelectorAll('#clips a')){a.click();await sleep(700)}};
+const $=s=>document.querySelector(s),v=$('#v');
+const S={file:null,url:null,dur:0,pcm:null,lvlRef:1,hl:[],asr:null,ac:null,src:null,urls:[],busy:false};
+const COL=['#b026ff','#ffe600','#39ff14'],clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const P=(b,t,p)=>{const e=$('#p'+b);e.hidden=false;if(p!=null)e.value=p;$('#t'+b).textContent=t||''};
+const busy=b=>{S.busy=b;$('#an').disabled=b||!S.file;$('#gen').disabled=b||!S.hl.length;$('#file').disabled=b};
+const seek=(t)=>new Promise(r=>{const h=()=>{v.removeEventListener('seeked',h);r()};v.addEventListener('seeked',h);v.currentTime=t});
+const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
+
+/* ---------- Devanagari -> Roman (rule based) ---------- */
+const C={क:'k',ख:'kh',ग:'g',घ:'gh',ङ:'n',च:'ch',छ:'chh',ज:'j',झ:'jh',ञ:'n',ट:'t',ठ:'th',ड:'d',ढ:'dh',ण:'n',त:'t',थ:'th',द:'d',ध:'dh',न:'n',प:'p',फ:'ph',ब:'b',भ:'bh',म:'m',य:'y',र:'r',ल:'l',व:'v',श:'sh',ष:'sh',स:'s',ह:'h',क़:'q',ख़:'kh',ग़:'g',ज़:'z',ड़:'r',ढ़:'rh',फ़:'f'};
+const VI={अ:'a',आ:'a',इ:'i',ई:'i',उ:'u',ऊ:'u',ऋ:'ri',ए:'e',ऐ:'ai',ओ:'o',औ:'au',ऑ:'o'};
+const M={'ा':'a','ि':'i','ी':'i','ु':'u','ू':'u','ृ':'ri','े':'e','ै':'ai','ो':'o','ौ':'au','ॉ':'o'};
+function roman(txt){
+  const s=txt.normalize('NFC');
+  let o='';const a=[...s];
+  for(let i=0;i<a.length;i++){const c=a[i],n=a[i+1];
+    if(C[c]){let b=C[c];if(n==='\u093C'){i++}
+      const q=a[i+1];o+=b;
+      if(M[q]){o+=M[q];i++}else if(q==='\u094D'){i++}else o+='\u0001';
+    }else if(VI[c])o+=VI[c];else if(c==='ं'||c==='ँ')o+='n';else if(c==='ः')o+='h';else if(c==='\u093C'||c==='\u094D'){}else o+=c;}
+  return o.split(/\s+/).map(w=>w.replace(/\u0001$/,'').replace(/([aeiou])([^aeiou\u0001\s]+)\u0001(?=[^aeiou\u0001\s]+[aeiou])/g,'$1$2').replace(/\u0001/g,'a')).join(' ').trim();
+}
+
+/* ---------- Upload ---------- */
+function reset(){S.urls.forEach(URL.revokeObjectURL);S.urls=[];if(S.url)URL.revokeObjectURL(S.url);S.url=S.pcm=null;S.hl=[];$('#hls').textContent='Run the analysis to see highlights.';$('#clips').innerHTML='';$('#all').disabled=true;$('#err').textContent='';['#pa','#pg'].forEach(i=>$(i).hidden=true);$('#ta').textContent=$('#tg').textContent=''}
+$('#file').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;reset();S.file=null;$('#an').disabled=true;
+  const fail=m=>{$('#err').textContent=m;v.hidden=true;$('#meta').textContent=f.name};
+  if(!f.type.startsWith('video/'))return fail('That is not a video file.');
+  if(!v.canPlayType(f.type))return fail('This browser cannot play '+f.type+'. Convert to MP4 (H.264) or WebM.');
+  if(f.size>200*1048576)return fail('File is '+(f.size/1048576|0)+' MB. This browser-only version supports up to 200 MB (large files need a backend worker — see notes).');
+  S.url=URL.createObjectURL(f);v.src=S.url;v.hidden=false;
+  try{await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no();setTimeout(no,40000)})}catch{return fail('Chrome cannot decode this video. Usually it is H.265/HEVC (phone camera or screen recorder) or the file is not fully on the phone. Convert it to H.264 MP4 and try again.')}
+  S.dur=v.duration;
+  if(S.dur<60)return fail('Video is '+Math.round(S.dur)+'s. Minimum is 1 minute.');
+  if(S.dur>1800)return fail('Video is '+fmt(S.dur)+' long. This version supports up to 30 minutes.');
+  S.file=f;$('#meta').textContent=`${f.name} · ${(f.size/1048576).toFixed(1)} MB · ${fmt(S.dur)} · ${v.videoWidth}×${v.videoHeight} · ready`;busy(false);
+};
+
+/* ---------- Analysis ---------- */
+async function decodeAudio(f){
+  const ac=new AudioContext({sampleRate:16000});
+  const buf=await ac.decodeAudioData(await f.arrayBuffer());ac.close();
+  const pcm=new Float32Array(buf.length),n=buf.numberOfChannels;
+  for(let c=0;c<n;c++){const d=buf.getChannelData(c);for(let i=0;i<pcm.length;i++)pcm[i]+=d[i]/n}
+  return pcm;
+}
+const norm=a=>{const s=[...a].sort((x,y)=>x-y),p=s[Math.floor(s.length*.95)]||1e-9;return a.map(x=>Math.min(1,x/(p||1e-9)))};
+$('#an').onclick=async()=>{
+  busy(true);$('#err').textContent='';v.pause();
+  try{
+    const N=Math.floor(S.dur/2);let aud=new Array(N).fill(0),hasA=false;
+    P('a','Decoding audio…',2);
+    try{S.pcm=await decodeAudio(S.file);hasA=true;
+      for(let i=0;i<N;i++){let s=0;const o=i*32000;for(let k=0;k<32000;k++){const x=S.pcm[o+k]||0;s+=x*x}aud[i]=Math.sqrt(s/32000)}
+      S.lvlRef=[...aud].sort((a,b)=>a-b)[Math.floor(N*.95)]||1e-6;
+    }catch{S.pcm=null;$('#err').textContent='No decodable audio — using visual motion only; captions unavailable.'}
+    const c=document.createElement('canvas');c.width=32;c.height=18;const x=c.getContext('2d',{willReadFrequently:true});
+    const grab=()=>{x.drawImage(v,0,0,32,18);return x.getImageData(0,0,32,18).data};
+    const mo=new Array(N).fill(0);
+    for(let i=0;i<N;i++){
+      await seek(i*2+.5);const a=grab();await seek(i*2+.8);const b=grab();let s=0;
+      for(let k=0;k<a.length;k+=4)s+=Math.abs(a[k]-b[k])+Math.abs(a[k+1]-b[k+1])+Math.abs(a[k+2]-b[k+2]);
+      mo[i]=s/(576*765);
+      if(i%5==0)P('a',`Scanning video ${fmt(i*2)} / ${fmt(S.dur)}`,5+90*i/N);
+    }
+    const na=norm(aud),nm=norm(mo),nj=norm(aud.map((x,i)=>Math.max(0,x-(aud[i-1]||0))));
+    const mu=mo.reduce((a,b)=>a+b,0)/N,sd=Math.sqrt(mo.reduce((a,b)=>a+(b-mu)**2,0)/N);
+    const raw=na.map((_,i)=>(hasA?.4*na[i]+.25*nj[i]+.35*nm[i]:nm[i])+(mo[i]>mu+2.5*sd?.1:0));
+    const sc=raw.map((_,i)=>((raw[i-1]??raw[i])+raw[i]+(raw[i+1]??raw[i]))/3);
+    const want=clamp(Math.round(S.dur/90),1,12),order=sc.map((s,i)=>i).sort((a,b)=>sc[b]-sc[a]),top=sc[order[0]]||1;
+    S.hl=[];
+    for(const i of order){
+      if(S.hl.length>=want)break;
+      let l=i,r=i;while(l>0&&sc[l-1]>=.6*sc[i]&&i-l<10)l--;while(r<N-1&&sc[r+1]>=.6*sc[i]&&r-i<10)r++;
+      const auto=[10,20,30,40].find(d=>d>=(r-l+1)*2+6)||40,t=i*2+1;
+      const st=clamp(t-auto*.4,0,S.dur-auto);
+      if(S.hl.some(h=>st<h.start+h.maxD+5&&st+40>h.start-5))continue;
+      const why=[];if(hasA&&na[i]>.7)why.push('loud audio / reaction');if(hasA&&nj[i]>.5)why.push('sudden audio spike');if(nm[i]>.7)why.push('intense on-screen motion');if(mo[i]>mu+2.5*sd)why.push('sharp scene change');
+      S.hl.push({t,auto,maxD:40,start:st,score:Math.round(100*sc[i]/top),why:why.join(', ')||'best combined score in this section',words:null,key:''});
+    }
+    S.hl.sort((a,b)=>b.score-a.score);
+    for(const h of S.hl){await seek(h.t);const tc=document.createElement('canvas');tc.width=224;tc.height=126;tc.getContext('2d').drawImage(v,0,0,224,126);h.thumb=tc.toDataURL('image/jpeg',.7);h.on=true}
+    renderHL();P('a',`Done — ${S.hl.length} highlights found.`,100);
+  }catch(e){$('#err').textContent='Analysis failed: '+e.message}
+  busy(false);
+};
+const range=h=>{const sel=$('#dur').value,d=sel==='auto'?h.auto:+sel;return{d,s:clamp(h.t-d*.4,0,S.dur-d)}};
+function renderHL(){
+  const box=$('#hls');box.innerHTML='';
+  S.hl.forEach((h,i)=>{const r=range(h),el=document.createElement('div');el.className='hl';
+    el.innerHTML=`<img src="${h.thumb}"><div><label style="color:#e8ecff"><input type="checkbox" ${h.on?'checked':''}> #${i+1} <span class="sc">score ${h.score}</span></label>
+    <div>${fmt(r.s)} → ${fmt(r.s+r.d)} · ${r.d}s</div><div class="note">Why: ${h.why}</div></div>`;
+    el.querySelector('input').onchange=e=>h.on=e.target.checked;box.appendChild(el)});
+}
+$('#dur').onchange=()=>S.hl.length&&renderHL();
+
+/* ---------- Speech to text (Whisper in-browser) ---------- */
+async function transcribe(s,e){
+  if(!S.pcm)return[];
+  if(!S.asr){
+    const {pipeline}=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2/+esm');
+    S.asr=await pipeline('automatic-speech-recognition','Xenova/whisper-base',{progress_callback:p=>{if(p.status==='progress')P('g','Downloading speech model (one time) '+Math.round(p.progress)+'%')}});
+  }
+  const seg=S.pcm.slice(Math.floor(s*16000),Math.floor(e*16000)),lang=$('#lang').value;
+  const o=await S.asr(seg,{language:lang,task:'transcribe',return_timestamps:'word',chunk_length_s:30});
+  return(o.chunks||[]).map(c=>({w:(lang==='hindi'?roman(c.text):c.text.trim()).toUpperCase(),s:c.timestamp[0],e:c.timestamp[1]??c.timestamp[0]+.4})).filter(w=>w.w);
+}
+
+/* ---------- Render (canvas compose + MediaRecorder) ---------- */
+function pickMime(){return['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m))}
+function lvlAt(t){if(!S.pcm)return 0;const o=Math.floor(t*16000);let s=0;for(let k=0;k<1600;k++){const x=S.pcm[o+k]||0;s+=x*x}return Math.sqrt(s/1600)/S.lvlRef}
+async function render(h,r,words,W,enh,prog){
+  const H=W*16/9,k=W/720,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  if(!S.ac){S.ac=new AudioContext();S.src=S.ac.createMediaElementSource(v);S.src.connect(S.ac.destination)}
+  await S.ac.resume();const dest=S.ac.createMediaStreamDestination();S.src.disconnect();S.src.connect(dest);
+  const st=c.captureStream(30);dest.stream.getAudioTracks().forEach(t=>st.addTrack(t));
+  const mt=pickMime();if(!mt)throw new Error('MediaRecorder not supported in this browser');
+  const rec=new MediaRecorder(st,{mimeType:mt,videoBitsPerSecond:W>=1080?12e6:8e6}),ch=[];
+  rec.ondataavailable=e=>e.data.size&&ch.push(e.data);const done=new Promise(r=>rec.onstop=r);
+  const vw=v.videoWidth,vh=v.videoHeight,TH=690*k;let z=0;
+  const frame=t=>{
+    x.filter='none';x.fillStyle='#07091a';x.fillRect(0,0,W,H);
+    const tgt=Math.max(lvlAt(r.s+t)>.8?1:lvlAt(r.s+t)*.8,Math.max(0,1-Math.abs(r.s+t-h.t)/2));z+=(tgt-z)*.25;
+    const zoom=1.5+.6*z;let cw,chh=vh/zoom;cw=chh*W/TH;if(cw>vw){cw=vw;chh=cw*TH/W}
+    x.save();x.beginPath();x.rect(0,0,W,TH);x.clip();x.filter=enh?'url(#sharp) contrast(1.04) saturate(1.05)':'none';
+    x.drawImage(v,(vw-cw)/2,(vh-chh)/2,cw,chh,0,0,W,TH);x.restore();
+    const bs=Math.min(W/vw,405*k/vh),dw=vw*bs,dh=vh*bs;x.filter=enh?'url(#sharp) contrast(1.04) saturate(1.05)':'none';
+    x.drawImage(v,(W-dw)/2,700*k+(405*k-dh)/2,dw,dh);x.filter='none';
+    const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'#b026ff');g.addColorStop(1,'#3b82f6');
+    x.fillStyle=g;x.shadowColor='#b026ff';x.shadowBlur=14*k;x.fillRect(0,TH,W,5*k);x.shadowBlur=0;
+    let i=words.findIndex(w=>t>=w.s&&t<w.e+.15);if(i<0){for(let j=0;j<words.length;j++)if(words[j].s<=t)i=j}
+    if(i<0)return;const gi=Math.floor(i/3),grp=words.slice(gi*3,gi*3+3);
+    if(t<grp[0].s-.05||t>grp[grp.length-1].e+.4)return;
+    let fs=66*k;x.textBaseline='middle';const meas=()=>{x.font=`900 ${fs}px Impact,"Arial Black",sans-serif`;return grp.map(w=>x.measureText(w.w).width)};
+    let ws=meas();const sp=.3*fs;while(ws.reduce((a,b)=>a+b,0)+sp*(ws.length-1)>W*.92){fs*=.92;ws=meas()}
+    let px=(W-(ws.reduce((a,b)=>a+b,0)+sp*(ws.length-1)))/2;const y=1195*k;
+    grp.forEach((w,j)=>{const act=gi*3+j===i,big=w.w.length>5||/!$/.test(w.w),pop=act?1+.18*Math.max(0,1-(t-w.s)/.15):1,sz=act&&big?1.1:1;
+      x.save();x.translate(px+ws[j]/2,y);x.scale(pop*sz,pop*sz);x.textAlign='center';x.lineJoin='round';x.lineWidth=11*k;x.strokeStyle='#0a0620';
+      x.strokeText(w.w,0,0);const col=big&&act?COL[1]:COL[(gi*3+j)%3];
+      if(act){x.shadowColor=col;x.shadowBlur=16*k}x.fillStyle=act?col:'#fff';x.fillText(w.w,0,0);x.restore();px+=ws[j]+sp});
+  };
+  await seek(r.s);v.volume=1;await v.play();rec.start(250);
+  await new Promise(res=>{const f=()=>{const t=v.currentTime-r.s;if(t>=r.d||v.ended){res();return}frame(t);prog(t/r.d);requestAnimationFrame(f)};f()});
+  v.pause();rec.stop();await done;S.src.disconnect();S.src.connect(S.ac.destination);
+  return{blob:new Blob(ch,{type:mt.split(';')[0]}),ext:mt.includes('mp4')?'mp4':'webm'};
+}
+
+/* ---------- Generate ---------- */
+const slots=new Map();
+async function makeClip(h,idx,n,base,total){
+  const r=range(h),W=+$('#res').value,key=r.s+'/'+r.d+'/'+$('#lang').value;
+  if(h.key!==key){P('g',`Clip ${idx}/${total}: transcribing speech…`,base);h.words=await transcribe(r.s,r.s+r.d);h.key=key}
+  const out=await render(h,r,h.words,W,$('#enh').checked,p=>P('g',`Clip ${idx}/${total}: rendering ${Math.round(p*100)}% (keep screen on)`,base+100/total*p));
+  const u=URL.createObjectURL(out.blob);S.urls.push(u);
+  let el=slots.get(h);if(!el){el=document.createElement('div');slots.set(h,el);$('#clips').appendChild(el)}
+  const name=`clipnova_${idx}_${r.d}s.${out.ext}`;
+  el.innerHTML=`<video src="${u}" controls playsinline></video><div class="note">#${idx} · ${r.d}s · ${W}×${W*16/9|0} · ${out.ext.toUpperCase()}${h.words.length?'':' · no speech detected'}</div>
+  <div class="row"><a class="btn s" href="${u}" download="${name}">Download</a><button class="s g">Regenerate</button></div>`;
+  el.querySelector('button').onclick=async()=>{if(S.busy)return;busy(true);try{h.key='';await makeClip(h,idx,n,0,1);P('g','Done',100)}catch(e){$('#tg').textContent='Failed: '+e.message}busy(false)};
+}
+$('#gen').onclick=async()=>{
+  const sel=S.hl.filter(h=>h.on);if(!sel.length){$('#tg').textContent='Select at least one highlight.';return}
+  busy(true);let lock=null;try{lock=await navigator.wakeLock?.request('screen')}catch{}
+  try{for(let i=0;i<sel.length;i++)await makeClip(sel[i],S.hl.indexOf(sel[i])+1,sel.length,100/sel.length*i,sel.length);P('g','All clips ready.',100);$('#all').disabled=false}
+  catch(e){$('#tg').textContent='Generation failed: '+e.message}
+  lock?.release();busy(false);
+};
+$('#all').onclick=async()=>{for(const a of document.querySelectorAll('#clips a')){a.click();await new Promise(r=>setTimeout(r,700))}};
+addEventListener('beforeunload',()=>{S.urls.forEach(URL.revokeObjectURL)});
 </script></body></html>
